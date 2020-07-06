@@ -1,35 +1,46 @@
 version: '2'
 services: 
-  # docker-mysql:
-  #   image: mysql:latest
-  #   environment:
-  #     - MYSQL_ROOT_PASSWORD=root
-  #     - MYSQL_USER=app_user 
-  #     - MYSQL_DATABASE=test
-  #     - MYSQL_PASSWORD=root123
-  # spring-docker-service:
-  #   image: spring-docker-service
-  #   build:
-  #     context: ./bike
-  #     dockerfile: ./Dockerfile.spring
-  #   depends_on:
-  #     - docker-mysql
-  #   ports:
-  #     - 7070:8081
-  #   environment:
-  #     - CATALINA_OPTS=-Dspring.profiles.active=container
-  #     - DATABASE_HOST=docker-mysql
-  #     - DATABASE_USER=root
-  #     - DATABASE_PASSWORD=root123
-  #     - DATABASE_NAME=test  
-  #     - DATABASE_PORT=3306
-  bikeuiapp:
-    build: 
+  bike-postgres:
+    image: "postgres:9.6-alpine"
+    container_name: bike-postgres
+    volumes:
+      - bike-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      # - POSTGRES_PASSWORD=root123
+      - POSTGRES_DB=scrum
+      - POSTGRES_USER=scrum
+      - POSTGRES_PASSWORD=scrum
+    
+  bike-app:
+    build:
+      context: ./bike
+      dockerfile: Dockerfile.spring
+    container_name: bike-app
+
+    environment:
+      - DB_SERVER=bike-postgres
+      - POSTGRES_DB=scrum
+      - POSTGRES_USER=scrum
+      - POSTGRES_PASSWORD=scrum
+
+    ports:
+      - 8080:8080
+    links: 
+      - bike-postgres
+
+  bike-ui:
+    build:
       context: ./bike-ui
       dockerfile: Dockerfile.angular
-    ports:
-      - "4000:4200"
-    volumes:
-      - "/app/node_modules"
-      #current context changes also reflected in /app where working dir is
-      - "./bike-ui:/app"
+    container_name: bike-ui
+    ports: 
+      - 4200:80
+    links:
+      - bike-app
+        
+
+  #Volumes for db data
+volumes: 
+  bike-data:
